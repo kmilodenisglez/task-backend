@@ -1,21 +1,37 @@
+# Certificados y archivos comprimidos
 *.pem
 *.tar.gz
+
+# Python
 __pycache__/
 *.pyc
 
-.env
-
-.idea/
-.DS_Store
+# Entornos virtuales
 /.venv/
 /venv/
-/output/*
-!/output/.gitkeep
 
-# Celery stuff:
+# Variables de entorno
+.env
+
+# IDE / macOS
+.idea/
+.DS_Store
+
+# Output / datos temporales
+/output/*
+!/output/.gitkeep  # mantener el archivo .gitkeep para versionar la carpeta
+
+# Alembic
+# NO ignorar alembic/versions para mantener migraciones en Git
+# Puedes ignorar archivos temporales de Alembic si los hubiera:
+alembic/*.pyc
+
+# Celery
 celerybeat-schedule
 celerybeat-schedule.db
 celerybeat-schedule-shm
 celerybeat-schedule-wal
 celerybeat.pid
 
+# Docker
+*.log
