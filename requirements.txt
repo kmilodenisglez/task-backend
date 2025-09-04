@@ -11,3 +11,6 @@ alembic
 # --- Security ---
 passlib[bcrypt]
 python-jose[cryptography]
+
+# --- More ----
+pydantic-settings
