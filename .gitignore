@@ -1,0 +1,21 @@
+*.pem
+*.tar.gz
+__pycache__/
+*.pyc
+
+.env
+
+.idea/
+.DS_Store
+/.venv/
+/venv/
+/output/*
+!/output/.gitkeep
+
+# Celery stuff:
+celerybeat-schedule
+celerybeat-schedule.db
+celerybeat-schedule-shm
+celerybeat-schedule-wal
+celerybeat.pid
+

@@ -1,0 +1,12 @@
+# Incluir dependencias de producción también
+-r requirements.txt
+
+# --- Testing ---
+pytest
+pytest-asyncio
+httpx
+
+# --- Dev Tools ---
+black
+isort
+flake8

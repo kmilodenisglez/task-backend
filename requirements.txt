@@ -1,0 +1,13 @@
+# --- Core ---
+fastapi
+uvicorn[standard]
+python-dotenv
+
+# --- Database ---
+sqlalchemy
+psycopg2-binary
+alembic
+
+# --- Security ---
+passlib[bcrypt]
+python-jose[cryptography]
