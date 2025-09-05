@@ -5,6 +5,11 @@
 pytest
 pytest-asyncio
 httpx
+asgi-lifespan
+
+# --- Database ---
+asyncpg
+sqlalchemy[asyncio]
 
 # --- Dev Tools ---
 black
