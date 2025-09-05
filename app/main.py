@@ -1,7 +1,7 @@
 # app/main.py
 from fastapi import FastAPI
 from app.api.v1.tasks import router
-from app.database import Base, engine
+# from app.database import Base, engine
 
 # Create tables (for initial development only, then use Alembic)
 # Base.metadata.create_all(bind=engine)
