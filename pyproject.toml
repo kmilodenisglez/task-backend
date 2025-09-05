@@ -32,6 +32,7 @@ dependencies = [
     "passlib[bcrypt]>=1.7.0",
     "python-jose[cryptography]>=3.3.0",
     "pydantic-settings>=2.0.0",
+    "python-multipart>=0.0.20",
 ]
 
 # Dependencias opcionales (dev)
