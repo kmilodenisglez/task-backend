@@ -4,6 +4,7 @@ Models package - SQLAlchemy database models
 """
 # Import Base first
 from .base import Base
+from .user import User
 from .task import Task
 
 # Import models in the correct order to avoid relationship problems
@@ -17,4 +18,4 @@ def configure_mappers():
     configure_mappers()
 
 
-__all__ = ["Base", "Task", "configure_mappers"]
+__all__ = ["Base", "User", "Task", "configure_mappers"]
