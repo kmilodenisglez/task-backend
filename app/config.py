@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
+    watchfiles_ignore: str = "output/postgres_data"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
