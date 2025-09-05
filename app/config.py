@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     watchfiles_ignore: str = "output/postgres_data"
 
+    testing: bool = False
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
