@@ -35,3 +35,12 @@ celerybeat.pid
 
 # Docker
 *.log
+
+# Python Packages
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg
