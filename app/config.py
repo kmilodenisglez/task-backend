@@ -1,5 +1,5 @@
 # app/config.py
-from pydantic_settings import BaseSettings
+from pydantic_settings import SettingsConfigDict, BaseSettings
 
 class Settings(BaseSettings):
     database_url: str
@@ -11,12 +11,14 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
 
     watchfiles_ignore: str = "output/postgres_data"
-
     testing: bool = False
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    # Modern configuration (Pydantic v2)
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="allow"
+    )
 
-
-settings = Settings()
+# Settings object instance
+settings = Settings()  # type: ignore
