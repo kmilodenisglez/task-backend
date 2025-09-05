@@ -8,8 +8,6 @@ from app.config import settings
 
 TESTING = settings.testing
 
-Base = declarative_base()
-
 if TESTING:
     # Synchronous mode for testing
     DATABASE_URL = "sqlite:///:memory:"
