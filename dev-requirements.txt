@@ -3,6 +3,7 @@
 
 # --- Testing ---
 pytest
+pytest-env
 pytest-asyncio
 httpx
 asgi-lifespan
