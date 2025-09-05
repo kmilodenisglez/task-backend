@@ -1,22 +1,49 @@
 # app/database.py
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import declarative_base, sessionmaker
+
+# Detect if we are in test mode
 from app.config import settings
 
-# Database engine
-engine = create_engine(settings.database_url)
+TESTING = settings.testing
 
-# Local session
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Base for models
 Base = declarative_base()
 
-# Dependency for FastAPI
+if TESTING:
+    # Synchronous mode for testing
+    DATABASE_URL = "sqlite:///:memory:"
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        echo=True
+    )
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+else:
+    # Asynchronous mode for production/development
+    DATABASE_URL = settings.database_url.replace("postgresql+psycopg2", "postgresql+asyncpg")
+    engine = create_async_engine(DATABASE_URL, echo=True)
+    SessionLocal = sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autoflush=False,
+        autocommit=False,
+    )
+
+# get_db function that works for both modes
 def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    if TESTING:
+        # Synchronous mode
+        db = SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+    else:
+        # Asynchronous mode
+        db = SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
