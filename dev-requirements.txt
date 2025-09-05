@@ -16,3 +16,6 @@ sqlalchemy[asyncio]
 black
 isort
 flake8
+mypy
+types-requests
+types-urllib3
