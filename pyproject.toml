@@ -33,6 +33,7 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "pydantic-settings>=2.0.0",
     "python-multipart>=0.0.20",
+    "itsdangerous>=2.2.0",
 ]
 
 # Dependencias opcionales (dev)
