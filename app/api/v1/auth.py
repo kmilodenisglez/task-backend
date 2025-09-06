@@ -1,84 +1,79 @@
-from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+# app/api/v1/auth.py
+from fastapi import APIRouter, Depends, Form, HTTPException
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
+from app.database import get_db, DBSession
 from app.models import User
+from app.schemas import Token, UserResponse
 from app.utils import hash_password, verify_password
-from app.utils.validators import validate_password
-
-# load environment variables from .env
-load_dotenv()
+from app.utils.auth import create_access_token, get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-@router.post("/register")
+
+
+class TokenResponse(Token):
+    token_type: str = "bearer"
+
+
+@router.post("/register", response_model=TokenResponse)
 async def register(
-        request: Request,
         email: str = Form(...),
         password: str = Form(...),
         name: str = Form(None),
-        db: Session = Depends(get_db),
+        db: DBSession = Depends(get_db),
 ):
-    # Password validation
+    from app.utils.validators import validate_password
     validate_password(password)
 
-    # Check if user already exists using modern SQLAlchemy syntax
-    existing_user = db.execute(
-        select(User).where(User.email == email)
-    ).scalar_one_or_none()
+    result = await db.execute(select(User).where(User.email == email))
+    existing_user = result.scalar_one_or_none()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(email=email, name=name, hashed_password=hash_password(password))
     db.add(user)
-    db.commit()
-    db.refresh(user)
-    # Optionally log in the user after registration
-    request.session["user"] = {"id": user.id, "email": user.email, "name": user.name}
+    await db.commit()
+    await db.refresh(user)
+
+    access_token = create_access_token(data={"sub": str(user.id)})
+
     return {
-        "message": "User registered",
+        "access_token": access_token,
+        "token_type": "bearer",
         "user": {"id": user.id, "email": user.email, "name": user.name},
     }
 
 
-@router.post("/login")
+@router.post("/login", response_model=TokenResponse)
 async def login(
-        request: Request,
         email: str = Form(...),
         password: str = Form(...),
-        db: Session = Depends(get_db),
+        db: DBSession = Depends(get_db),
 ):
-    user = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
-    if (
-            not user
-            or user.hashed_password is None
-            or not verify_password(password, user.hashed_password)
-    ):
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    request.session["user"] = {"id": user.id, "email": user.email, "name": user.name}
+
+    access_token = create_access_token(data={"sub": str(user.id)})
+
     return {
-        "message": "Logged in",
+        "access_token": access_token,
+        "token_type": "bearer",
         "user": {"id": user.id, "email": user.email, "name": user.name},
     }
 
+@router.get("/me", response_model=UserResponse)
+async def get_me(
+        current_user: dict = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(User).where(User.id == current_user["id"]))
+    user = result.scalar_one_or_none()
 
-@router.post("/logout")
-async def logout(request: Request):
-    request.session.clear()
-    return {"message": "Logged out"}
-
-
-@router.get("/me")
-async def get_me(request: Request):
-    user = request.session.get("user")
     if not user:
-        return {"authenticated": False}
-    return {"authenticated": True, "user": user}
+        raise HTTPException(status_code=404, detail="User not found")
 
-
-@router.post("/test-login")
-async def test_login(request: Request):
-    # Simulate a user login for testing
-    request.session["user"] = {"id": 1, "email": "test@example.com", "name": "Test"}
-    return {"message": "logged in"}
+    return user
