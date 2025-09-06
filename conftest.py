@@ -6,13 +6,14 @@ from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 
 from app.config import settings
+from app.models import Base
 
 settings.testing = True
 
 print(settings.testing)
 
 from app.main import app
-from app.database import Base, get_db
+from app.database import get_db
 
 # In-memory SQLite for testing
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
