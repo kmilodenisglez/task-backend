@@ -1,15 +1,13 @@
 # app/api/v1/auth.py
-from typing import Dict
 
 from fastapi import APIRouter, Depends, Form, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing_extensions import Any
 
 from app.database import get_db
 from app.models import User
 from app.schemas import Token, UserResponse
-from app.schemas.auth import TokenResponse
+from app.schemas.auth import TokenResponse, CurrentUser
 from app.utils import hash_password, verify_password
 from app.utils.auth import create_access_token, get_current_user
 
@@ -57,7 +55,7 @@ async def login(
     if not user or not user.hashed_password or not verify_password(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    access_token = create_access_token(data={"sub": str(user.id)})
+    access_token = create_access_token(data={"sub": str(user.id), "email": user.email})
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
@@ -67,7 +65,7 @@ async def login(
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(
-        current_user: Dict[str, Any] = Depends(get_current_user),
+        current_user: CurrentUser = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ) -> UserResponse:
     result = await db.execute(select(User).where(User.id == current_user.id))
