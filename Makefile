@@ -54,7 +54,7 @@ run:
 
 test:
 	@echo "🧪 Running tests..."
-	$(PYTEST) $(TEST_DIR)/ -v
+	$(PYTEST) $(TEST_DIR)/ -v -s
 
 coverage:
 	@echo "📊 Running tests with coverage..."
