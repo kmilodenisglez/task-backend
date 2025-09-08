@@ -54,6 +54,7 @@ run:
 
 test:
 	@echo "🧪 Running tests..."
+	rm -f test.db test.db-journal test.db-shm test.db-wal
 	$(PYTEST) $(TEST_DIR)/ -v -s
 
 coverage:
