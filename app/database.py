@@ -1,16 +1,20 @@
 # app/database.py
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+
 from app.config import settings
 
-# Usa asyncpg en todos los entornos
-DATABASE_URL = settings.database_url.replace("postgresql+psycopg2", "postgresql+asyncpg")
+def get_database_url():
+    if settings.testing:
+        # Use file-based SQLite for testing
+        return "sqlite+aiosqlite:///test.db"
+        # return "sqlite+aiosqlite:///:memory:"
+    return settings.database_url.replace("postgresql+psycopg2", "postgresql+asyncpg")
 
-if settings.testing:
-    DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+DATABASE_URL = get_database_url()
 
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 async_session_maker = async_sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession, autoflush=False,
-                                   autocommit=False, )
+                                         autocommit=False, )
 
 
 async def get_db():
