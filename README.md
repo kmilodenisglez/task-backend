@@ -1,6 +1,14 @@
 # Task Backend API
 
 [![CI](https://github.com/kmilodenisglez/task-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/kmilodenisglez/task-backend/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-lightgrey)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI/CD-green)
+![SQLite](https://img.shields.io/badge/SQLite-Test-blue)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Async-purple)
+![Docker](https://img.shields.io/badge/Docker-Container-blue)
+![Coverage](https://img.shields.io/badge/Coverage-0.0%25-green)
+
 
 A modern RESTful API for task management built with **FastAPI**, **SQLAlchemy 2.x (async)**, and **PostgreSQL**.
 Designed for scalability, testability, and developer experience.
@@ -27,13 +35,13 @@ make docker-dev
 # Docs:  http://localhost:8000/docs
 ```
 
-➡️ For **production build**:
+🛠️ For **production build**:
 
 ```bash
 make docker-prod
 ```
 
-➡️ For **local (venv + Python)**:
+🛠️ For Development **local (venv + Python)**:
 
 ```bash
 python -m venv venv && source venv/bin/activate
@@ -41,18 +49,34 @@ pip install -e ".[dev]"
 make dev
 ```
 
+### Lint & format
+
+```bash
+make -f Makefile.ci format   # Auto-format code
+make -f Makefile.ci lint     # Check code style
+```
+
+### Run tests
+
+```bash
+make -f Makefile.ci test
+make -f Makefile.ci coverage
+```
+
 ---
+
 
 ## 🚀 Features
 
-* FastAPI with Pydantic v2 and async/await
-* Asynchronous database with `asyncpg` and `SQLAlchemy`
-* PostgreSQL containerized with Docker/Podman
-* Database migrations via **Alembic**
-* Testing with `pytest`, `httpx`, and SQLite isolation
-* Configurable environments via `.env`
-* Code quality: `mypy`, `black`, `isort`, `flake8`, `pytest-cov`
-* Developer workflow powered by `Makefile` and `pyproject.toml`
+* **FastAPI backend** with **Pydantic v2** and async/await support
+* **Asynchronous database** access with `asyncpg` and SQLAlchemy (async mode)
+* **PostgreSQL** containerized using **Docker** / **Podman**
+* **Database migrations** powered by **Alembic**
+* **Isolated testing** with `pytest`, `pytest-asyncio`, `httpx`, and SQLite (async mode)
+* **Configurable environments** via `.env` files and `pydantic-settings`
+* **Code quality tools**: `mypy`, `black`, `isort`, `flake8`, `pytest-cov`
+* **Developer workflow** streamlined with **Makefile** and `pyproject.toml`
+* **Continuous Integration (CI)** via **GitHub Actions** for automated linting, testing, type checking, and coverage reports
 
 ---
 
@@ -266,6 +290,7 @@ task-backend/
 ├── Dockerfile.dev
 ├── docker-compose.yml
 ├── Makefile
+├── Makefile.ci
 ├── pyproject.toml
 └── README.md
 ```
@@ -283,13 +308,11 @@ task-backend/
 
 ---
 
-## 📈 Code Coverage in CI/CD
+## 📈 CI/CD (GitHub Actions)
 
-* CI pipeline (`.github/workflows/ci.yml`) runs:
-
-  * Linting, type checks, tests
-  * Coverage report (`coverage.xml`, `htmlcov/`)
-* Artifacts (`coverage-html`, `coverage-xml`) are uploaded for download
+* Linting, type checking, tests, coverage
+* Coverage reports uploaded as artifacts (`coverage-html`, `coverage-xml`)
+* Workflow: `.github/workflows/ci.yml`
 
 ---
 
