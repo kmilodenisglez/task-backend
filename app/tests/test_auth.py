@@ -27,7 +27,7 @@ async def test_login_success(db_session, test_user):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/api/v1/auth/login",
-            data={"email": test_user.email, "password": "T3stp@ssw0rd.23"}
+            data={"username": test_user.email, "password": "T3stp@ssw0rd.23"}
         )
     assert response.status_code == 200
     data = response.json()
@@ -43,7 +43,7 @@ async def test_login_invalid_credentials(db_session, test_user):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/api/v1/auth/login",
-            data={"email": test_user.email, "password": "Wr0ng-p@ssWd"}
+            data={"username": test_user.email, "password": "Wr0ng-p@ssWd"}
         )
     assert response.status_code == 401
     assert "Invalid credentials" in response.json()["detail"]

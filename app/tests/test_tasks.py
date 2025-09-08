@@ -19,7 +19,7 @@ async def client(override_get_db):
 @pytest_asyncio.fixture
 async def authenticated_client(client, override_get_db, test_user):
     "Client authenticated with JWT token"
-    token = create_access_token(data={"sub": str(test_user.id), "email": test_user.email})
+    token = create_access_token(data={"sub": str(test_user.id), "username": test_user.email})
     client.headers.update({"Authorization": f"Bearer {token}"})
     yield client
 
