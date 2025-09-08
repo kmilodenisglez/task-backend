@@ -59,6 +59,11 @@ dev = [
     "types-requests",
     "types-urllib3",
     "pytest-cov>=5.0.0",
+    
+    # mypy, stubs and typing
+    "sqlalchemy[mypy]",
+    "types-python-jose",
+    "types-passlib",
 ]
 
 # Configuración de setuptools
