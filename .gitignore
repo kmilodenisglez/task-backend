@@ -47,3 +47,4 @@ build/
 htmlcov/
 *.egg
 /test.db
+/coverage.xml
