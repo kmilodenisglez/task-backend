@@ -1,6 +1,6 @@
 # Task Backend API
 
-![CI](https://github.com/<your-username>/<your-repo>/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/kmilodenisglez/actions/workflows/ci.yml/badge.svg)
 
 A modern RESTful API for task management built with **FastAPI**, **SQLAlchemy 2.x (async)**, and **PostgreSQL**.
 Designed for scalability, testability, and developer experience.
@@ -13,7 +13,7 @@ Clone the repo, create `.env`, and run the app with Docker:
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/<your-username>/task-backend.git
+git clone https://github.com/kmilodenisglez/task-backend.git
 cd task-backend
 
 # 2. Copy environment file
@@ -171,7 +171,7 @@ make logs
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/<your-username>/task-backend.git
+   git clone https://github.com/kmilodenisglez/task-backend.git
    cd task-backend
    ```
 
