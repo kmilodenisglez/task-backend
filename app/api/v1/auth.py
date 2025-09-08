@@ -1,13 +1,10 @@
-# app/api/v1/auth.py
-
 from fastapi import APIRouter, Depends, Form, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models import User
-from app.schemas import Token, UserResponse
-from app.schemas.auth import TokenResponse, CurrentUser
+from app.schemas.auth import TokenResponse, CurrentUser, UserResponse
 from app.utils import hash_password, verify_password
 from app.utils.auth import create_access_token, get_current_user
 
