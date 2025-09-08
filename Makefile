@@ -3,15 +3,24 @@
 # Useful commands for developing the FastAPI project
 #
 # Usage:
-#   make dev          # Development mode with auto-reload
+#   make install-dev  # Install development dependencies
+#   make dev          # Development mode with auto-reload (local)
 #   make run          # Local production environment
-#   make test         # Run tests
-#   make coverage     # Run tests and generate code coverage report
+#   make test         # Run tests (local)
+#   make coverage     # Run tests with coverage (local)
 #   make typecheck    # Perform type checking with mypy
 #   make format       # Format code with black and isort
 #   make lint         # Lint code with flake8
-#   make install-dev  # Install development dependencies
+#   make docker-dev   # Run app + db in Docker (dev mode, hot reload)
+#   make docker-prod  # Run app + db in Docker (prod mode)
+#   make stop         # Stop all docker services
+#   make logs         # View docker logs (app + db)
 #   make clean        # Clean generated files
+#
+#   make migrate      # Alembic: create revision
+#   make upgrade      # Alembic: apply latest migration
+#   make downgrade    # Alembic: rollback last migration
+#   make db-status    # Alembic: show current revision
 
 # Variables
 PYTHON := python
@@ -21,6 +30,7 @@ MYPY := mypy
 BLACK := black
 ISORT := isort
 FLAKE8 := flake8
+DOCKER_COMPOSE := docker-compose
 
 # Directories and files
 APP_DIR := app
@@ -29,12 +39,13 @@ COVERAGE_DIR := htmlcov
 ENV_FILE := .env
 
 # Main commands
-.PHONY: dev run test coverage typecheck format lint clean install install-dev
+.PHONY: dev run test coverage typecheck format lint clean install install-dev \
+        docker-dev docker-prod stop logs migrate upgrade downgrade db-status
 
-# --- Development ---
+# --- Development (local) ---
 
 dev:
-	@echo "🚀 Starting FastAPI in development mode..."
+	@echo "🚀 Starting FastAPI in development mode (local)..."
 	$(UVICORN) $(APP_DIR).main:app \
 		--reload \
 		--reload-dir=$(APP_DIR) \
@@ -44,13 +55,13 @@ dev:
 		--env-file $(ENV_FILE)
 
 run:
-	@echo "📦 Starting FastAPI in production mode..."
+	@echo "📦 Starting FastAPI in production mode (local)..."
 	$(UVICORN) $(APP_DIR).main:app \
 		--host 0.0.0.0 \
 		--port 8000 \
 		--env-file $(ENV_FILE)
 
-# --- Testing ---
+# --- Testing (local) ---
 
 test:
 	@echo "🧪 Running tests..."
@@ -65,7 +76,7 @@ coverage:
 		--cov-report=html:$(COVERAGE_DIR) \
 		--cov-report=xml
 
-# --- Code quality ---
+# --- Code quality (local) ---
 
 typecheck:
 	@echo "🔍 Checking types with mypy..."
@@ -77,10 +88,28 @@ format:
 	$(ISORT) $(APP_DIR)/
 
 lint:
-	@echo " linting code with flake8..."
+	@echo "🔎 Linting code with flake8..."
 	$(FLAKE8) $(APP_DIR)/
 
-# --- deploy ---
+# --- Docker workflows ---
+
+docker-dev:
+	@echo "🐳 Starting Docker (dev profile: hot reload + dev deps)..."
+	$(DOCKER_COMPOSE) --profile dev up -d --build
+
+docker-prod:
+	@echo "🐳 Starting Docker (prod profile: optimized image)..."
+	$(DOCKER_COMPOSE) --profile prod up -d --build
+
+stop:
+	@echo "🛑 Stopping all Docker services..."
+	$(DOCKER_COMPOSE) down
+
+logs:
+	@echo "📜 Showing Docker logs (follow mode)..."
+	$(DOCKER_COMPOSE) logs -f
+
+# --- Deploy (local installs) ---
 
 install:
 	@echo "📦 Installing production dependencies..."
@@ -98,9 +127,9 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -name "*.pyc" -delete 2>/dev/null || true
 	@echo "✅ Clean complete"
-	
-	
-# ----- Alembic ----
+
+# --- Alembic ---
+
 migrate:
 	alembic revision --autogenerate -m "auto"
 
