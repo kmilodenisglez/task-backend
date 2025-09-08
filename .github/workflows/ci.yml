@@ -42,6 +42,12 @@ jobs:
       - name: Typecheck
         run: make -f Makefile.ci typecheck
 
+      # ✅ Set environment variables for Pydantic settings
+      - name: Setup environment for tests
+        run: |
+          echo "database_url=postgresql://postgres:postgres@localhost:5432/postgres" >> .env
+          echo "secret_key=supersecretkey" >> .env
+
       - name: Run tests
         run: make -f Makefile.ci test
 
