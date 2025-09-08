@@ -1,6 +1,6 @@
 # Task Backend API
 
-![CI](https://github.com/kmilodenisglez/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/kmilodenisglez/task-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/kmilodenisglez/task-backend/actions/workflows/ci.yml)
 
 A modern RESTful API for task management built with **FastAPI**, **SQLAlchemy 2.x (async)**, and **PostgreSQL**.
 Designed for scalability, testability, and developer experience.
