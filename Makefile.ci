@@ -1,0 +1,69 @@
+# Makefile.ci
+#
+# Minimal commands for CI/CD pipelines
+#
+# Usage in pipelines:
+#   make -f Makefile.ci install
+#   make -f Makefile.ci lint
+#   make -f Makefile.ci typecheck
+#   make -f Makefile.ci test
+#   make -f Makefile.ci coverage
+#   make -f Makefile.ci docker-build
+
+# Variables
+PYTHON := python
+PYTEST := pytest
+MYPY := mypy
+BLACK := black
+ISORT := isort
+FLAKE8 := flake8
+DOCKER := docker
+DOCKER_COMPOSE := docker-compose
+
+APP_DIR := app
+TEST_DIR := app/tests
+COVERAGE_DIR := htmlcov
+
+# CI/CD targets
+.PHONY: install lint typecheck test coverage docker-build docker-push clean
+
+install:
+	@echo "📦 Installing dependencies for CI..."
+	pip install -e ".[dev]"
+
+lint:
+	@echo "🔎 Running linters..."
+	$(BLACK) --check $(APP_DIR)/
+	$(ISORT) --check-only $(APP_DIR)/
+	$(FLAKE8) $(APP_DIR)/
+
+typecheck:
+	@echo "🔍 Running mypy type checks..."
+	$(MYPY) $(APP_DIR)/
+
+test:
+	@echo "🧪 Running tests..."
+	$(PYTEST) $(TEST_DIR)/ -v -s
+
+coverage:
+	@echo "📊 Running tests with coverage..."
+	$(PYTEST) $(TEST_DIR)/ \
+		--cov=$(APP_DIR) \
+		--cov-report=term-missing \
+		--cov-report=xml \
+		--cov-report=html:$(COVERAGE_DIR)
+
+docker-build:
+	@echo "🐳 Building Docker image for production..."
+	$(DOCKER) build -t task-backend:ci -f Dockerfile .
+
+docker-push:
+	@echo "🚀 Pushing Docker image to registry..."
+	$(DOCKER) push task-backend:ci
+
+clean:
+	@echo "🗑️ Cleaning up..."
+	rm -rf $(COVERAGE_DIR)/ .pytest_cache/ .coverage
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	find . -name "*.pyc" -delete 2>/dev/null || true
+	@echo "✅ CI clean complete"
