@@ -1,54 +1,95 @@
 # Task Backend API
 
-![CI](https://github.com/<tu-usuario>/<tu-repo>/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/<your-username>/<your-repo>/actions/workflows/ci.yml/badge.svg)
 
 A modern RESTful API for task management built with **FastAPI**, **SQLAlchemy 2.x (async)**, and **PostgreSQL**.
 Designed for scalability, testability, and developer experience.
 
-🚀 **Features:**
+---
 
-- FastAPI with Pydantic v2 and async/await
-- Asynchronous database with `asyncpg` and `SQLAlchemy`
-- PostgreSQL containerized with Podman/Docker
-- Database migrations via **Alembic**
-- Testing with `pytest`, `httpx`, and SQLite isolation
-- Configurable environments using `.env`
-- Code quality: `mypy`, `black`, `isort`, `flake8`, `pytest-cov`
-- Development workflow with `Makefile` and `pyproject.toml`
+## ⚡ Quickstart
+
+Clone the repo, create `.env`, and run the app with Docker:
+
+```bash
+# 1. Clone repository
+git clone https://github.com/<your-username>/task-backend.git
+cd task-backend
+
+# 2. Copy environment file
+cp .env.example .env
+
+# 3. Start dev environment (Docker + hot reload)
+make docker-dev
+
+# 4. Open in browser
+# API:   http://localhost:8000
+# Docs:  http://localhost:8000/docs
+```
+
+➡️ For **production build**:
+
+```bash
+make docker-prod
+```
+
+➡️ For **local (venv + Python)**:
+
+```bash
+python -m venv venv && source venv/bin/activate
+pip install -e ".[dev]"
+make dev
+```
+
+---
+
+## 🚀 Features
+
+* FastAPI with Pydantic v2 and async/await
+* Asynchronous database with `asyncpg` and `SQLAlchemy`
+* PostgreSQL containerized with Docker/Podman
+* Database migrations via **Alembic**
+* Testing with `pytest`, `httpx`, and SQLite isolation
+* Configurable environments via `.env`
+* Code quality: `mypy`, `black`, `isort`, `flake8`, `pytest-cov`
+* Developer workflow powered by `Makefile` and `pyproject.toml`
 
 ---
 
 ## 📦 Requirements
 
-- Python 3.10+
-- [Podman](https://podman.io/) or [Docker](https://www.docker.com/)
-- `make` (Linux/macOS)
-- `pip` or `asdf` (recommended for Python version management)
+* Python **3.10+** (3.13 recommended)
+* [Podman](https://podman.io/) or [Docker](https://www.docker.com/)
+* `make` (Linux/macOS)
+* `pip` or [asdf](https://asdf-vm.com/) (recommended for Python version management)
 
 ---
 
-## Environment Setup
+## ⚙️ Environment Setup
 
-1. Create a `.env` file based on the example:
+1. Copy the example env file:
+
+   ```bash
+   cp .env.example .env
+   ```
+2. Edit `.env` with your secrets and DB credentials.
+
+   > 🔐 **Do not commit `.env`** – only `.env.example` is versioned.
+
+---
+
+## 🐘 Database Setup (PostgreSQL)
+
+We use a containerized PostgreSQL for dev and test.
+
+### Create persistent directories
 
 ```bash
-cp .env.example .env
+mkdir -p ./output/postgres_data
+mkdir -p ./output/postgres_run
 ```
 
-## 🐳 Database Setup (PostgreSQL with Podman/Docker)
-
-We use a containerized PostgreSQL instance for development and testing.
-
-### 1. Create directories for persistent data
-
-```bash
-mkdir -p /home/kmilo/Downloads/developer/projects-test/task-backend/output/postgres_data
-mkdir -p /home/kmilo/Downloads/developer/projects-test/task-backend/output/postgres_run
-```
-
-> 🔁 Replace the path with your project path if needed.
-
-### 2. Run PostgreSQL container
+### Start PostgreSQL with Podman
 
 ```bash
 podman run --name my_postgres \
@@ -56,49 +97,14 @@ podman run --name my_postgres \
   -e POSTGRES_PASSWORD=task_pass \
   -e POSTGRES_DB=task_db \
   -p 5432:5432 \
-  -v /home/kmilo/Downloads/developer/projects-test/task-backend/output/postgres_data:/var/lib/postgresql/data:Z \
-  -v /home/kmilo/Downloads/developer/projects-test/task-backend/output/postgres_run:/var/run/postgresql:Z \
+  -v ./output/postgres_data:/var/lib/postgresql/data:Z \
+  -v ./output/postgres_run:/var/run/postgresql:Z \
   -d postgres:13.6-alpine
 ```
 
-> 💡 For Docker, replace `podman` with `docker`.
+> 💡 Replace `podman` with `docker` if you prefer Docker.
 
----
-
-## 🔧 Initialize PostgreSQL (First Time Only)
-
-If the databases don't exist yet, create them and set up the user.
-
-### Option 1: Manual Setup (Interactive)
-
-```bash
-podman exec -it my_postgres psql -U postgres
-```
-
-Then run inside `psql`:
-
-```sql
--- Create user
-CREATE
-USER task_user WITH PASSWORD 'task_pass';
-
--- Create databases
-CREATE
-DATABASE task_db OWNER task_user;
-CREATE
-DATABASE task_test_db OWNER task_user;
-
--- Grant privileges
-GRANT ALL PRIVILEGES ON DATABASE
-task_db TO task_user;
-GRANT ALL PRIVILEGES ON DATABASE
-task_test_db TO task_user;
-
--- Exit
-\q
-```
-
-### Option 2: One-liner (Non-interactive)
+### Initialize (first time only)
 
 ```bash
 podman exec -i my_postgres psql -U postgres <<EOF
@@ -110,188 +116,157 @@ GRANT ALL PRIVILEGES ON DATABASE task_test_db TO task_user;
 EOF
 ```
 
-### ✅ Verify Connection
+---
 
-```bash
-podman exec -it my_postgres psql -U task_user -d task_db
-```
+## 🧱 Database Migrations (Alembic)
 
-If you connect without errors, your database is ready.
+* Generate new migration:
+
+  ```bash
+  alembic revision --autogenerate -m "create tasks table"
+  ```
+* Apply migrations:
+
+  ```bash
+  alembic upgrade head
+  ```
 
 ---
 
-## 🧱 Migrations with Alembic
+## 🐳 Run the Application with Docker Compose
 
-We use **Alembic** to manage database schema changes.
+This project provides **two Dockerfiles**:
 
-### 1. Generate a migration (after model changes)
+* `Dockerfile` → optimized for **production**
+* `Dockerfile.dev` → for **development** (hot reload, dev dependencies)
+
+### Development (hot reload)
 
 ```bash
-alembic revision --autogenerate -m "create tasks table"
+make docker-dev
 ```
 
-### 2. Apply migrations to the database
+### Production
 
 ```bash
-alembic upgrade head
+make docker-prod
 ```
 
-> 📂 Migrations are stored in the `alembic/versions/` folder.
-
----
-
-## 🚀 Installation
-
-### 1. Clone the repository
+### Stop all services
 
 ```bash
-git clone https://github.com/your-username/task-backend.git
-cd task-backend
+make stop
 ```
 
-### 2. Create and activate virtual environment
+### View logs
 
 ```bash
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-# venv\Scripts\activate   # Windows
-```
-
-### 3. Install dependencies
-
-```bash
-# Install production dependencies
-pip install -e .
-
-# Install development dependencies
-pip install -e ".[dev]"
+make logs
 ```
 
 ---
 
-## ⚙️ Configuration
+## 💻 Run Locally with Python + venv
 
-Copy the example `.env` file:
+1. Clone the repository:
 
-```bash
-cp .env.example .env
-```
+   ```bash
+   git clone https://github.com/<your-username>/task-backend.git
+   cd task-backend
+   ```
 
-Edit `.env` with your credentials:
+2. Create virtual environment:
 
-```env
-DATABASE_URL=postgresql+asyncpg://task_user:task_pass@localhost/task_db
-TEST_DATABASE_URL=postgresql+asyncpg://task_user:task_pass@localhost/task_test_db
-SECRET_KEY=your-super-secret-key-here
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-```
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Linux/macOS
+   # venv\Scripts\activate   # Windows
+   ```
 
-> 🔐 **Never commit your `.env` file to Git.**
+3. Install dependencies:
 
----
+   ```bash
+   pip install -e .
+   pip install -e ".[dev]"
+   ```
 
-## 🛠 Development
+4. Start server (with reload):
 
-### Start the server in development mode
+   ```bash
+   make dev
+   ```
 
-```bash
-make dev
-```
+Server available at:
 
-> 🔗 Server available at: `http://localhost:8000`  
-> 📄 Swagger documentation: `http://localhost:8000/docs`
-
----
-
-## 🧪 Run Tests
-
-### Using SQLite (Recommended for Speed)
-
-Ensure `TESTING=true` is set or use the sync mode in `app/config.py`. Then run:
-
-```bash
-# Run all tests
-make test
-
-# With code coverage
-make coverage
-
-# View HTML report
-open htmlcov/index.html
-```
+* API → [http://localhost:8000](http://localhost:8000)
+* Docs → [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
-## 🏗️ Docker Compose (Optional)
+## 🧪 Running Tests
 
-You can also use `docker-compose.yml` to run both PostgreSQL and FastAPI.
+* Run tests:
 
-### 1. Start services
+  ```bash
+  make test
+  ```
 
-```bash
-docker-compose up -d
-```
+* Run with coverage:
 
-This starts:
+  ```bash
+  make coverage
+  ```
 
-- `db`: PostgreSQL container
-- `web`: FastAPI application
+* Open HTML coverage report:
 
-### 2. View logs
-
-```bash
-docker-compose logs -f db
-docker-compose logs -f web
-```
-
-### 3. Start only PostgreSQL
-
-```bash
-docker-compose up -d db
-```
-
-Then run FastAPI locally with `make dev`.
+  ```bash
+  open htmlcov/index.html   # macOS
+  xdg-open htmlcov/index.html  # Linux
+  ```
 
 ---
 
-## 🧰 Useful Commands (via Makefile)
+## 🧰 Useful Makefile Commands
 
-| Command          | Description                             |
-|------------------|-----------------------------------------|
-| `make dev`       | Start FastAPI with reload               |
-| `make run`       | Start without reload (local production) |
-| `make test`      | Run all tests                           |
-| `make coverage`  | Run tests with coverage                 |
-| `make typecheck` | Run `mypy`                              |
-| `make format`    | Format with `black` and `isort`         |
-| `make lint`      | Lint with `flake8`                      |
-| `make clean`     | Clean generated files                   |
+| Command            | Description                              |
+| ------------------ | ---------------------------------------- |
+| `make dev`         | Run FastAPI locally (reload)             |
+| `make run`         | Run FastAPI locally (no reload)          |
+| `make docker-dev`  | Run dev environment with Docker Compose  |
+| `make docker-prod` | Run prod environment with Docker Compose |
+| `make stop`        | Stop Docker services                     |
+| `make logs`        | Show Docker logs                         |
+| `make test`        | Run all tests                            |
+| `make coverage`    | Run tests with coverage                  |
+| `make typecheck`   | Type checking with `mypy`                |
+| `make format`      | Format with `black` + `isort`            |
+| `make lint`        | Lint with `flake8`                       |
+| `make migrate`     | Create new Alembic migration             |
+| `make upgrade`     | Apply Alembic migrations                 |
+| `make downgrade`   | Rollback last migration                  |
 
 ---
 
-## 🧬 Project Structure
+## 📂 Project Structure
 
 ```
 task-backend/
 ├── app/
-│   ├── __init__.py
 │   ├── main.py
 │   ├── config.py
 │   ├── database.py
-│   ├── models/
 │   ├── api/
-│   └── schemas/
-├── app/tests/
-│   ├── __init__.py
-│   └── test_tasks.py
+│   ├── models/
+│   ├── schemas/
+│   └── tests/
 ├── alembic/
-│   ├── versions/
-│   └── env.py
+│   └── versions/
 ├── .env.example
+├── Dockerfile
+├── Dockerfile.dev
 ├── docker-compose.yml
-├── pyproject.toml
 ├── Makefile
+├── pyproject.toml
 └── README.md
 ```
 
@@ -299,21 +274,25 @@ task-backend/
 
 ## 🧪 Testing Strategy
 
-- **Development/Production**: Async mode with PostgreSQL + `asyncpg`
-- **Testing**: Can use either:
-    - ✅ **SQLite + sync mode** (fast, isolated, no async issues)
-    - ✅ **PostgreSQL + async mode** (realistic, but requires careful session isolation)
-- Uses `settings.testing` flag to toggle behavior
-- Each test runs in an isolated transaction with rollback
+* **Development/Production**: async mode with PostgreSQL + `asyncpg`
+* **Testing**:
+
+  * ✅ SQLite (fast, isolated)
+  * ✅ PostgreSQL async (realistic, slower)
+* Controlled via `settings.testing` flag
 
 ---
 
-## 📈 Code Coverage
+## 📈 Code Coverage in CI/CD
 
-After running `make coverage`, open `htmlcov/index.html` to see which lines are covered by tests.
+* CI pipeline (`.github/workflows/ci.yml`) runs:
+
+  * Linting, type checks, tests
+  * Coverage report (`coverage.xml`, `htmlcov/`)
+* Artifacts (`coverage-html`, `coverage-xml`) are uploaded for download
 
 ---
 
 ## 🛡 License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the **MIT License**. See the `LICENSE` file.
