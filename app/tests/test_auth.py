@@ -1,53 +1,80 @@
 # app/tests/test_auth.py
+import uuid
+
 import pytest
-from fastapi.testclient import TestClient
-from jose import jwt
+import pytest_asyncio
+from httpx import AsyncClient, ASGITransport
 
-from app.config import settings
-from app.main import app
 from app.models import User
-from app.database import get_db, async_session
-from app.utils.auth import hash_password
-
-client = TestClient(app)
-
-
-def create_jwt_token(user_id: int) -> str:
-    """Helper: crea un token JWT para un usuario"""
-    from datetime import datetime, timedelta
-    expire = datetime.utcnow() + timedelta(minutes=30)
-    to_encode = {"sub": str(user_id), "exp": expire}
-    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+from app.main import app
+from app.utils import hash_password
+from app.utils.auth import create_access_token
 
 
-@pytest.fixture
-async def test_user():
-    """Crea un usuario de prueba en la DB"""
-    async with async_session() as session:
-        user = User(
-            email="testuser@example.com",
-            name="Test User",
-            hashed_password=hash_password("testpassword123")
+# @pytest.fixture(autouse=True)
+# async def clean_db(db_session):
+#     # Clear the 'users' table before each test
+#     await db_session.execute(text("DELETE FROM users"))
+#     await db_session.commit()
+
+@pytest_asyncio.fixture(scope="function")
+async def test_user(db_session):
+    unique_email = f"testuser_{uuid.uuid4()}@example.com"
+    user = User(email=unique_email, hashed_password=hash_password("T3stp@ssw0rd.23"))
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    yield user
+
+    await db_session.delete(user)
+    await db_session.commit()
+
+
+@pytest.mark.asyncio
+async def test_root():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/")
+    assert response.status_code == 200
+    assert response.json() == {"message": "Welcome to Task API"}
+
+
+@pytest.mark.asyncio
+async def test_login_success(db_session, test_user):
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/auth/login",
+            data={"email": test_user.email, "password": "T3stp@ssw0rd.23"}
         )
-        session.add(user)
-        await session.commit()
-        await session.refresh(user)
-        yield user
-        await session.delete(user)
-        await session.commit()
+    assert response.status_code == 200
+    data = response.json()
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
+    assert "user" in data
+    assert data["user"]["email"] == test_user.email
+    assert data["user"]["id"] == test_user.id
 
 
-def test_me_with_valid_jwt(test_user):
-    # 1. Crear token
-    token = create_jwt_token(test_user.id)
+@pytest.mark.asyncio
+async def test_login_invalid_credentials(db_session, test_user):
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/auth/login",
+            data={"email": test_user.email, "password": "Wr0ng-p@ssWd"}
+        )
+    assert response.status_code == 401
+    assert "Invalid credentials" in response.json()["detail"]
 
-    # 2. Llamar a /me con el token
-    response = client.get(
-        "/api/v1/auth/me",
-        headers={"Authorization": f"Bearer {token}"}
-    )
 
-    # 3. Verificar respuesta
+@pytest.mark.asyncio
+async def test_me_with_valid_jwt(override_get_db, test_user):
+    token = create_access_token(data={"sub": str(test_user.id), "email": test_user.email})
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == test_user.id
@@ -55,14 +82,36 @@ def test_me_with_valid_jwt(test_user):
     assert data["name"] == test_user.name
 
 
-def test_me_with_invalid_token():
-    response = client.get(
-        "/api/v1/auth/me",
-        headers={"Authorization": "Bearer invalid.token.here"}
-    )
+@pytest.mark.asyncio
+async def test_me_with_not_found_user(override_get_db):
+    token = create_access_token(data={"sub": "99999", "email": "email@no.me"})
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+    assert response.status_code == 404
+    assert "detail" in response.json()
+
+
+@pytest.mark.asyncio
+async def test_me_with_invalid_token():
+    token = create_access_token(data={})
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {token}"}
+        )
     assert response.status_code == 401
 
 
-def test_me_without_token():
-    response = client.get("/api/v1/auth/me")
+@pytest.mark.asyncio
+async def test_me_without_token():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(
+            "/api/v1/auth/me",
+        )
     assert response.status_code == 401
+    assert "detail" in response.json()
