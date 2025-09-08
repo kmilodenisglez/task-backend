@@ -3,14 +3,14 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Any
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2
+from fastapi.security import OAuth2, OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.config import settings
 from app.schemas.auth import CurrentUser
 
-# Hashing context
+# Hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -22,25 +22,19 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     if not plain_password or not hashed_password:
         return False
-    try:
-        return pwd_context.verify(plain_password, hashed_password)
-    except Exception:
-        return False
+    return pwd_context.verify(plain_password, hashed_password)
 
 
-# JWT functions
 def create_access_token(data: dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=30))
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
-    return encoded_jwt
+    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
 
 def decode_access_token(token: str) -> Optional[dict[str, Any]]:
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-        return payload
+        return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
     except JWTError:
         return None
 
@@ -48,13 +42,29 @@ def decode_access_token(token: str) -> Optional[dict[str, Any]]:
 # Custom OAuth2 for Swagger (Password Flow)
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel, OAuthFlowPassword
 
+
 class OAuth2PasswordBearerWithBearer(OAuth2):
     def __init__(self, tokenUrl: str):
         flows = OAuthFlowsModel(password=OAuthFlowPassword(tokenUrl=tokenUrl))
-        super().__init__(flows=flows, scheme_name="Bearer")
+        super().__init__(flows=flows, scheme_name="Bearer", auto_error=True)  # 👈 forzar 401
 
 
-oauth2_scheme = OAuth2PasswordBearerWithBearer(tokenUrl="/api/v1/auth/login")
+from fastapi import Request
+
+
+class OAuth2PasswordBearer401(OAuth2PasswordBearer):
+    async def __call__(self, request: Request) -> str:
+        authorization: str = request.headers.get("Authorization")
+        if not authorization:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return await super().__call__(request)
+
+
+oauth2_scheme = OAuth2PasswordBearer401(tokenUrl="/api/v1/auth/login")
 
 
 # Dependency for current user
@@ -68,7 +78,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> CurrentUser:
         )
     user_id = payload.get("sub")
     email = payload.get("email")
-    if not user_id:
+    if not user_id or not str(user_id).isdigit():
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token: missing user ID",
