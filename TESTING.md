@@ -1,27 +1,25 @@
-# Testing Strategy
+# 🧪 Testing Strategy (Async-First)
 
-> **Note:** In `TESTING` mode, we use **synchronous SQLite** to avoid event loop and asyncpg issues.  
-> The production version of the app remains **100% asynchronous** using `asyncpg`.
+> **Note:** The entire application — including tests — now runs **asynchronously** using `AsyncSession` and `AsyncClient`.
 
-This document explains the testing architecture and best practices for the project.
+This document explains the current testing architecture and best practices for the project.
 
 ---
 
-## 🧱 Testing Architecture: "Dual-Stack Persistence" Pattern
+## 🧱 Testing Architecture: "Async-Consistent" Pattern
 
-We use a **dual-stack persistence** strategy to separate concerns between development/production and testing:
+We follow an **async-consistent** strategy where:
 
-- ✅ **Production/Development**: Asynchronous mode with `asyncpg` + PostgreSQL
-- ✅ **Testing**: Synchronous mode with SQLite in-memory database
+- ✅ **Production**: Asynchronous mode with `asyncpg` + PostgreSQL
+- ✅ **Testing**: Asynchronous mode with `aiosqlite` (in-memory or file-based)
+- ✅ **Development**: Asynchronous mode with `asyncpg` + PostgreSQL
 
-This approach avoids common concurrency issues like:
-```
-asyncpg.exceptions._base.InterfaceError: cannot perform operation: another operation is in progress
-```
-and
-```
-RuntimeError: Task ... got Future ... attached to a different loop
-```
+This ensures:
+- 🔄 Consistent behavior across environments
+- ⚡ No "synchronous vs async" bugs slipping through
+- 🛠 Easier debugging and realistic test conditions
+
+We avoid legacy patterns like `.query()` or sync-style commits by using **pure async/await** throughout.
 
 ---
 
@@ -29,35 +27,71 @@ RuntimeError: Task ... got Future ... attached to a different loop
 
 | Benefit | Description |
 |-------|-------------|
-| 🚫 No asyncpg errors | SQLite is synchronous, so no event loop conflicts |
-| ⚡ Faster tests | In-memory DB is much faster than spinning up PostgreSQL |
-| 🧼 Cleaner tests | No need for `@pytest.mark.asyncio`, `await`, or `AsyncClient` |
-| 🐍 Production-safe | The real app still runs async with full performance |
-| 🔒 Isolation | Each test runs in a transaction that is rolled back after execution |
+| ✅ Consistency | Same async code runs in test, dev, and prod |
+| ⚡ Fast & Isolated | `aiosqlite` in-memory DB is fast and isolated |
+| 🧼 Clean Sessions | Each test uses a fresh `AsyncSession` with rollback |
+| 🔒 Secure by Default | Users only access their own data (tested) |
+| 📈 Realistic Performance | No hidden sync bottlenecks |
 
 ---
 
 ## 🔧 How It Works
 
-### 1. Mode Detection
-The `TESTING` mode is controlled via the `settings.testing` flag (from `pydantic-settings`), not environment variables.
+### 1. Mode Detection via Settings
+
+The `testing` flag is controlled via `Settings` and set **before** importing database components:
+
+```python
+# conftest.py
+from app.config import settings
+settings.testing = True  # ← Must be set before importing database
+```
 
 ```python
 # app/config.py
 class Settings(BaseSettings):
-    testing: bool = False  # Can be set in .env or overridden in tests
+    testing: bool = False
+    database_url: str = "postgresql+psycopg2://user:pass@localhost/taskdb"
+
+    @property
+    def database_url_for_async(self) -> str:
+        if self.testing:
+            return "sqlite+aiosqlite:///:memory:"
+        return self.database_url.replace("postgresql+psycopg2", "postgresql+asyncpg")
 ```
 
-During tests, this is set automatically in `conftest.py`.
+---
 
-### 2. Database Switching
-In `app/database.py`, the engine and session type are chosen based on `settings.testing`:
+### 2. Async Database Setup
 
-- `settings.testing = True` → SQLite + `Session` (synchronous)
-- `settings.testing = False` → PostgreSQL + `AsyncSession` (asynchronous)
+We use `AsyncSession` everywhere:
 
-### 3. Session Isolation
-Each test gets a fresh database session wrapped in a transaction. After the test, the transaction is **rolled back**, ensuring no data leaks.
+```python
+# app/database.py
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+
+DATABASE_URL = settings.database_url_for_async
+engine = create_async_engine(DATABASE_URL, echo=False)
+async_session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+```
+
+No more conditional `DBSession = Session if testing else AsyncSession`.
+
+---
+
+### 3. Test Isolation with Transactions
+
+Each test runs in an isolated async session. We use `override_get_db` to inject a test session:
+
+```python
+@pytest_asyncio.fixture
+async def override_get_db(db_session):
+    app.dependency_overrides[get_db] = lambda: db_session
+    yield
+    app.dependency_overrides.clear()
+```
+
+After each test, the session is cleaned up properly.
 
 ---
 
@@ -84,19 +118,86 @@ xdg-open htmlcov/index.html
 
 ## 📚 Notes
 
-- This setup uses `TestClient` from `fastapi.testclient`, not `AsyncClient`.
-- The `TESTING` mode is activated automatically in `conftest.py`.
-- Never commit `.env` or `*.egg-info/` to Git — they are ignored via `.gitignore`.
+- ✅ All tests use `AsyncClient` with `ASGITransport`.
+- ✅ `settings.testing = True` is set **before** importing database modules.
+- ✅ We use `select(...)` + `execute()` instead of `.query()`.
+- ✅ All DB operations use `await db.commit()` and `await db.refresh()`.
+- ✅ Users can only access their own tasks (ownership enforced in endpoints).
+- ❌ Never use `db.commit()` without `await` — it causes `RuntimeWarning`.
+- ❌ Never use `next(override_get_db())` — it breaks async context.
 
 ---
 
-## 🧪 Why Not Use Async Tests?
+## 🧪 Why Use Async Tests?
 
-While possible, fully asynchronous tests with `AsyncClient` and `asyncpg` require:
-- Complex session and transaction lifecycle management
-- Careful event loop handling
-- Shared connection issues
+Using **fully asynchronous tests** ensures:
 
-This synchronous testing layer is **simpler, faster, and more reliable** for unit and integration tests.
+| Reason | Explanation |
+|------|-------------|
+| 🔁 Realism | Tests mirror production behavior exactly |
+| 🐞 Fewer Bugs | No "works in dev, fails in prod" due to sync/async mismatch |
+| 🔐 Security | Full end-to-end auth flow with JWT and async DB lookup |
+| 📦 Simplicity | One code path, not two (no dual-stack complexity) |
 
-For end-to-end async testing (e.g., WebSockets), consider a separate `tests_async/` suite.
+We no longer need to maintain separate sync/async logic.
+
+---
+
+## 📋 Best Practices for Writing Tests
+
+### ✅ Use `authenticated_client` fixture
+```python
+@pytest_asyncio.fixture
+async def authenticated_client(override_get_db, test_user):
+    token = create_access_token(data={"sub": str(test_user.id)})
+    async with AsyncClient(...) as c:
+        c.headers["Authorization"] = f"Bearer {token}"
+        yield c
+```
+
+### ✅ Always `await` async operations
+```python
+await db_session.commit()
+await db_session.refresh(task)
+```
+
+### ✅ Filter by `user_id` in queries
+```python
+result = await db.execute(
+    select(Task).where(Task.user_id == current_user.id)
+)
+```
+
+### ✅ Validate response structure
+```python
+data = response.json()
+assert data["user_id"] == test_user.id
+```
+
+---
+
+## 🧹 Cleanup
+
+We clean up SQLite test files before running tests:
+
+```makefile
+test:
+	@echo "🧪 Running tests..."
+	rm -f test.db test.db-journal test.db-shm test.db-wal
+	$(PYTEST) $(TEST_DIR)/ -v -s
+```
+
+Or use `:memory:` for full isolation.
+
+---
+
+## ✅ Final Architecture Summary
+
+| Layer | Technology |
+|------|------------|
+| **Database (Prod)** | PostgreSQL + `asyncpg` |
+| **Database (Test)** | SQLite + `aiosqlite` |
+| **ORM** | SQLAlchemy 2.0+ with `AsyncSession` |
+| **Test Client** | `httpx.AsyncClient` + `ASGITransport` |
+| **Auth** | JWT + `get_current_user` dependency |
+| **Ownership** | Enforced in all task endpoints |
