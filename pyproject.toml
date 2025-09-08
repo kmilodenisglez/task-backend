@@ -35,6 +35,8 @@ dependencies = [
     "python-multipart>=0.0.20",
     "itsdangerous>=2.2.0",
     "bcrypt==4.0.1",
+    "asyncpg>=0.29.0",
+    "sqlalchemy[asyncio]>=2.0.0",
 ]
 
 # Dependencias opcionales (dev)
@@ -48,8 +50,7 @@ dev = [
     "asgi-lifespan>=2.0.0",
 
     # Database (async)
-    "asyncpg>=0.29.0",
-    "sqlalchemy[asyncio]>=2.0.0",
+    "aiosqlite>=0.21.0",
 
     # Dev Tools
     "black>=24.0.0",
