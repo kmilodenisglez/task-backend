@@ -1,68 +1,33 @@
 # conftest.py
-
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from fastapi.testclient import TestClient
-
-from app.config import settings
+import pytest_asyncio
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from app.models import Base
+from app.database import DATABASE_URL
+from app.config import settings
 
 settings.testing = True
 
-print(settings.testing)
-
-from app.main import app
-from app.database import get_db
-
-# In-memory SQLite for testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    echo=True
+# Engine de test
+test_engine = create_async_engine(
+    DATABASE_URL,
+    echo=True,
 )
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+TestSessionLocal = async_sessionmaker(
+    bind=test_engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+)
 
-# Create database once
-@pytest.fixture(scope="session", autouse=True)
-def create_test_database():
-    Base.metadata.create_all(bind=engine)
+@pytest_asyncio.fixture(scope="session")
+async def prepare_database():
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     yield
-    Base.metadata.drop_all(bind=engine)
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
-
-# Database session per test
-@pytest.fixture
-def db_session():
-    connection = engine.connect()
-    transaction = connection.begin()
-    session = TestingSessionLocal(bind=connection)
-
-    yield session
-
-    session.close()
-    transaction.rollback()
-    connection.close()
-
-
-# Overriding the get_db dependency
-@pytest.fixture(autouse=True)
-def override_get_db(db_session):
-    def _get_db_override():
-        try:
-            yield db_session
-        finally:
-            pass
-
-    app.dependency_overrides[get_db] = _get_db_override
-    yield
-    app.dependency_overrides.clear()
-
-
-# Synchronous HTTP client
-@pytest.fixture
-def client():
-    return TestClient(app)
+@pytest_asyncio.fixture
+async def db_session():
+    async with TestSessionLocal() as session:
+        yield session
