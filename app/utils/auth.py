@@ -2,13 +2,17 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Request, Depends, HTTPException, status
 from fastapi.security import OAuth2, OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.config import settings
 from app.schemas.auth import CurrentUser
+
+# Custom OAuth2 for Swagger (Password Flow)
+from fastapi.openapi.models import OAuthFlowPassword
+from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 
 # Hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -41,20 +45,12 @@ def decode_access_token(token: str) -> Optional[dict[str, Any]]:
         return None
 
 
-# Custom OAuth2 for Swagger (Password Flow)
-from fastapi.openapi.models import OAuthFlowPassword
-from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
-
-
 class OAuth2PasswordBearerWithBearer(OAuth2):
     def __init__(self, tokenUrl: str):
         flows = OAuthFlowsModel(password=OAuthFlowPassword(tokenUrl=tokenUrl))
         super().__init__(
             flows=flows, scheme_name="Bearer", auto_error=True
         )  # 👈 forzar 401
-
-
-from fastapi import Request
 
 
 class OAuth2PasswordBearer401(OAuth2PasswordBearer):
