@@ -1,19 +1,19 @@
 # app/api/v1/auth.py
+from typing import Dict
+
 from fastapi import APIRouter, Depends, Form, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing_extensions import Any
 
 from app.database import get_db
 from app.models import User
 from app.schemas import Token, UserResponse
+from app.schemas.auth import TokenResponse
 from app.utils import hash_password, verify_password
 from app.utils.auth import create_access_token, get_current_user
 
 router = APIRouter()
-
-
-class TokenResponse(Token):
-    token_type: str = "bearer"
 
 
 @router.post("/register", response_model=TokenResponse)
@@ -22,7 +22,7 @@ async def register(
         password: str = Form(...),
         name: str = Form(None),
         db: AsyncSession = Depends(get_db),
-):
+) -> TokenResponse:
     from app.utils.validators import validate_password
     validate_password(password)
 
@@ -36,13 +36,13 @@ async def register(
     await db.commit()
     await db.refresh(user)
 
-    access_token = create_access_token(data={"sub": str(user.id)})
+    access_token = create_access_token(data={"sub": str(user.id), "email": user.email})
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {"id": user.id, "email": user.email, "name": user.name},
-    }
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse(id=user.id, email=user.email, name=user.name),
+    )
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -50,30 +50,30 @@ async def login(
         email: str = Form(...),
         password: str = Form(...),
         db: AsyncSession = Depends(get_db),
-):
+) -> TokenResponse:
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(password, user.hashed_password):
+    if not user or not user.hashed_password or not verify_password(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access_token = create_access_token(data={"sub": str(user.id)})
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {"id": user.id, "email": user.email, "name": user.name},
-    }
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse(id=user.id, email=user.email, name=user.name),
+    )
 
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(
-        current_user: dict = Depends(get_current_user),
+        current_user: Dict[str, Any] = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
-):
-    result = await db.execute(select(User).where(User.id == current_user["id"]))
+) -> UserResponse:
+    result = await db.execute(select(User).where(User.id == current_user.id))
     user = result.scalar_one_or_none()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return user
+    return UserResponse.model_validate(user)
