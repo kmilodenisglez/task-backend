@@ -23,6 +23,14 @@ A modern RESTful API for task management built with **FastAPI**, **SQLAlchemy 2.
 
 ---
 
+## Environment Setup
+
+1. Create a `.env` file based on the example:
+
+```bash
+cp .env.example .env
+```
+
 ## 🐳 Database Setup (PostgreSQL with Podman/Docker)
 
 We use a containerized PostgreSQL instance for development and testing.
