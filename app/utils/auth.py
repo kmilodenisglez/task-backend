@@ -2,17 +2,17 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
-from fastapi import Request, Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
+
+# Custom OAuth2 for Swagger (Password Flow)
+from fastapi.openapi.models import OAuthFlowPassword
+from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2, OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.config import settings
 from app.schemas.auth import CurrentUser
-
-# Custom OAuth2 for Swagger (Password Flow)
-from fastapi.openapi.models import OAuthFlowPassword
-from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 
 # Hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
