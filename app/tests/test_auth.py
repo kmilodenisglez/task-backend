@@ -1,13 +1,9 @@
 # app/tests/test_auth.py
-import uuid
 
 import pytest
-import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 
-from app.models import User
 from app.main import app
-from app.utils import hash_password
 from app.utils.auth import create_access_token
 
 
@@ -16,18 +12,6 @@ from app.utils.auth import create_access_token
 #     # Clear the 'users' table before each test
 #     await db_session.execute(text("DELETE FROM users"))
 #     await db_session.commit()
-
-@pytest_asyncio.fixture(scope="function")
-async def test_user(db_session):
-    unique_email = f"testuser_{uuid.uuid4()}@example.com"
-    user = User(email=unique_email, hashed_password=hash_password("T3stp@ssw0rd.23"))
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-    yield user
-
-    await db_session.delete(user)
-    await db_session.commit()
 
 
 @pytest.mark.asyncio
