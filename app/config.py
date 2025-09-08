@@ -1,6 +1,7 @@
 # app/config.py
 from pydantic_settings import SettingsConfigDict, BaseSettings
 
+
 class Settings(BaseSettings):
     database_url: str
     test_database_url: str | None = None
@@ -15,10 +16,9 @@ class Settings(BaseSettings):
 
     # Modern configuration (Pydantic v2)
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="allow"
+        env_file=".env", env_file_encoding="utf-8", extra="allow"
     )
+
 
 # Settings object instance
 settings = Settings()  # type: ignore

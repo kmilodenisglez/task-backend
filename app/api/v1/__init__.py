@@ -14,4 +14,8 @@ api_router.include_router(tasks_router, prefix="/tasks", tags=["tasks"])
 api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 
 # Exportar para facilitar el import
-__all__ = ["auth_router", "tasks_router", "api_router",]
+__all__ = [
+    "auth_router",
+    "tasks_router",
+    "api_router",
+]

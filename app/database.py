@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 
 from app.config import settings
 
+
 def get_database_url():
     if settings.testing:
         # Use file-based SQLite for testing
@@ -10,11 +11,17 @@ def get_database_url():
         # return "sqlite+aiosqlite:///:memory:"
     return settings.database_url.replace("postgresql+psycopg2", "postgresql+asyncpg")
 
+
 DATABASE_URL = get_database_url()
 
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
-async_session_maker = async_sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession, autoflush=False,
-                                         autocommit=False, )
+async_session_maker = async_sessionmaker(
+    bind=engine,
+    expire_on_commit=False,
+    class_=AsyncSession,
+    autoflush=False,
+    autocommit=False,
+)
 
 
 async def get_db():

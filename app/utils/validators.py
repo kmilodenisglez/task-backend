@@ -7,7 +7,10 @@ PASSWORD_PATTERNS = [
     (r"[A-Z]", "Password must contain at least one uppercase letter"),
     (r"[a-z]", "Password must contain at least one lowercase letter"),
     (r"\d", "Password must contain at least one digit"),
-    (r"[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]", "Password must contain at least one special character"),
+    (
+        r"[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]",
+        "Password must contain at least one special character",
+    ),
 ]
 
 EMAIL_REGEX = re.compile(

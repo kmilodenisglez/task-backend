@@ -14,12 +14,13 @@ router = APIRouter()
 
 @router.post("/register", response_model=TokenResponse)
 async def register(
-        email: str = Form(...), 
-        password: str = Form(...),
-        name: str = Form(None),
-        db: AsyncSession = Depends(get_db),
+    email: str = Form(...),
+    password: str = Form(...),
+    name: str = Form(None),
+    db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
     from app.utils.validators import validate_password
+
     validate_password(password)
 
     result = await db.execute(select(User).where(User.email == email))
@@ -43,14 +44,18 @@ async def register(
 
 @router.post("/login", response_model=TokenResponse)
 async def login(
-        username: str = Form(...),
-        password: str = Form(...),
-        db: AsyncSession = Depends(get_db),
+    username: str = Form(...),
+    password: str = Form(...),
+    db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
     result = await db.execute(select(User).where(User.email == username))
     user = result.scalar_one_or_none()
 
-    if not user or not user.hashed_password or not verify_password(password, user.hashed_password):
+    if (
+        not user
+        or not user.hashed_password
+        or not verify_password(password, user.hashed_password)
+    ):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access_token = create_access_token(data={"sub": str(user.id), "email": user.email})
@@ -63,8 +68,8 @@ async def login(
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(
-        current_user: CurrentUser = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db)
+    current_user: CurrentUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
     result = await db.execute(select(User).where(User.id == current_user.id))
     user = result.scalar_one_or_none()

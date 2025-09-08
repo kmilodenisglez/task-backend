@@ -25,7 +25,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(data: dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(
+    data: dict[str, Any], expires_delta: Optional[timedelta] = None
+) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=30))
     to_encode.update({"exp": expire})
@@ -46,7 +48,9 @@ from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel, OAuthFlowPassw
 class OAuth2PasswordBearerWithBearer(OAuth2):
     def __init__(self, tokenUrl: str):
         flows = OAuthFlowsModel(password=OAuthFlowPassword(tokenUrl=tokenUrl))
-        super().__init__(flows=flows, scheme_name="Bearer", auto_error=True)  # 👈 forzar 401
+        super().__init__(
+            flows=flows, scheme_name="Bearer", auto_error=True
+        )  # 👈 forzar 401
 
 
 from fastapi import Request

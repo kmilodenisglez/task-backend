@@ -12,14 +12,18 @@ from app.utils.auth import create_access_token
 @pytest_asyncio.fixture
 async def client(override_get_db):
     "Asynchronous client with overridden dependencies"
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         yield c
 
 
 @pytest_asyncio.fixture
 async def authenticated_client(client, override_get_db, test_user):
     "Client authenticated with JWT token"
-    token = create_access_token(data={"sub": str(test_user.id), "username": test_user.email})
+    token = create_access_token(
+        data={"sub": str(test_user.id), "username": test_user.email}
+    )
     client.headers.update({"Authorization": f"Bearer {token}"})
     yield client
 
@@ -28,7 +32,7 @@ async def authenticated_client(client, override_get_db, test_user):
 async def test_create_task(authenticated_client, db_session, test_user):
     response = await authenticated_client.post(
         "/api/v1/tasks/",
-        json={"title": "Test task", "description": "A test description"}
+        json={"title": "Test task", "description": "A test description"},
     )
     assert response.status_code in (200, 201)
     data = response.json()
@@ -94,8 +98,7 @@ async def test_update_task(authenticated_client, db_session, test_user):
     await db_session.refresh(task)
 
     response = await authenticated_client.put(
-        f"/api/v1/tasks/{task.id}",
-        json={"title": "Updated title", "completed": True}
+        f"/api/v1/tasks/{task.id}", json={"title": "Updated title", "completed": True}
     )
     assert response.status_code == 200
     data = response.json()
@@ -112,8 +115,7 @@ async def test_update_task(authenticated_client, db_session, test_user):
 @pytest.mark.asyncio
 async def test_update_task_not_found(authenticated_client):
     response = await authenticated_client.put(
-        "/api/v1/tasks/99999",
-        json={"title": "No existe"}
+        "/api/v1/tasks/99999", json={"title": "No existe"}
     )
     assert response.status_code == 404
     assert "Task not found" in response.json()["detail"]

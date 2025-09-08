@@ -16,7 +16,9 @@ from app.utils.auth import create_access_token
 
 @pytest.mark.asyncio
 async def test_root():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.get("/")
     assert response.status_code == 200
     assert response.json() == {"message": "Welcome to Task API"}
@@ -24,10 +26,12 @@ async def test_root():
 
 @pytest.mark.asyncio
 async def test_login_success(db_session, test_user):
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.post(
             "/api/v1/auth/login",
-            data={"username": test_user.email, "password": "T3stp@ssw0rd.23"}
+            data={"username": test_user.email, "password": "T3stp@ssw0rd.23"},
         )
     assert response.status_code == 200
     data = response.json()
@@ -40,10 +44,12 @@ async def test_login_success(db_session, test_user):
 
 @pytest.mark.asyncio
 async def test_login_invalid_credentials(db_session, test_user):
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.post(
             "/api/v1/auth/login",
-            data={"username": test_user.email, "password": "Wr0ng-p@ssWd"}
+            data={"username": test_user.email, "password": "Wr0ng-p@ssWd"},
         )
     assert response.status_code == 401
     assert "Invalid credentials" in response.json()["detail"]
@@ -51,12 +57,15 @@ async def test_login_invalid_credentials(db_session, test_user):
 
 @pytest.mark.asyncio
 async def test_me_with_valid_jwt(override_get_db, test_user):
-    token = create_access_token(data={"sub": str(test_user.id), "email": test_user.email})
+    token = create_access_token(
+        data={"sub": str(test_user.id), "email": test_user.email}
+    )
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.get(
-            "/api/v1/auth/me",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
         )
 
     assert response.status_code == 200
@@ -70,10 +79,11 @@ async def test_me_with_valid_jwt(override_get_db, test_user):
 async def test_me_with_not_found_user(override_get_db):
     token = create_access_token(data={"sub": "99999", "email": "email@no.me"})
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.get(
-            "/api/v1/auth/me",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
         )
     assert response.status_code == 404
     assert "detail" in response.json()
@@ -83,17 +93,20 @@ async def test_me_with_not_found_user(override_get_db):
 async def test_me_with_invalid_token():
     token = create_access_token(data={})
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.get(
-            "/api/v1/auth/me",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
         )
     assert response.status_code == 401
 
 
 @pytest.mark.asyncio
 async def test_me_without_token():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.get(
             "/api/v1/auth/me",
         )

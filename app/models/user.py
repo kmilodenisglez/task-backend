@@ -30,4 +30,6 @@ class User(Base):
     )
 
     # Relationship with tasks
-    tasks: Mapped[List["Task"]] = relationship("Task", back_populates="user", cascade="all, delete-orphan")
+    tasks: Mapped[List["Task"]] = relationship(
+        "Task", back_populates="user", cascade="all, delete-orphan"
+    )
