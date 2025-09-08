@@ -1,8 +1,12 @@
 # Task Backend API
 
-A modern RESTful API for task management built with **FastAPI**, **SQLAlchemy 2.x (async)**, and **PostgreSQL**. Designed for scalability, testability, and developer experience.
+![CI](https://github.com/<tu-usuario>/<tu-repo>/actions/workflows/ci.yml/badge.svg)
+
+A modern RESTful API for task management built with **FastAPI**, **SQLAlchemy 2.x (async)**, and **PostgreSQL**.
+Designed for scalability, testability, and developer experience.
 
 🚀 **Features:**
+
 - FastAPI with Pydantic v2 and async/await
 - Asynchronous database with `asyncpg` and `SQLAlchemy`
 - PostgreSQL containerized with Podman/Docker
@@ -75,15 +79,20 @@ Then run inside `psql`:
 
 ```sql
 -- Create user
-CREATE USER task_user WITH PASSWORD 'task_pass';
+CREATE
+USER task_user WITH PASSWORD 'task_pass';
 
 -- Create databases
-CREATE DATABASE task_db OWNER task_user;
-CREATE DATABASE task_test_db OWNER task_user;
+CREATE
+DATABASE task_db OWNER task_user;
+CREATE
+DATABASE task_test_db OWNER task_user;
 
 -- Grant privileges
-GRANT ALL PRIVILEGES ON DATABASE task_db TO task_user;
-GRANT ALL PRIVILEGES ON DATABASE task_test_db TO task_user;
+GRANT ALL PRIVILEGES ON DATABASE
+task_db TO task_user;
+GRANT ALL PRIVILEGES ON DATABASE
+task_test_db TO task_user;
 
 -- Exit
 \q
@@ -225,6 +234,7 @@ docker-compose up -d
 ```
 
 This starts:
+
 - `db`: PostgreSQL container
 - `web`: FastAPI application
 
@@ -247,16 +257,16 @@ Then run FastAPI locally with `make dev`.
 
 ## 🧰 Useful Commands (via Makefile)
 
-| Command | Description |
-|--------|-------------|
-| `make dev` | Start FastAPI with reload |
-| `make run` | Start without reload (local production) |
-| `make test` | Run all tests |
-| `make coverage` | Run tests with coverage |
-| `make typecheck` | Run `mypy` |
-| `make format` | Format with `black` and `isort` |
-| `make lint` | Lint with `flake8` |
-| `make clean` | Clean generated files |
+| Command          | Description                             |
+|------------------|-----------------------------------------|
+| `make dev`       | Start FastAPI with reload               |
+| `make run`       | Start without reload (local production) |
+| `make test`      | Run all tests                           |
+| `make coverage`  | Run tests with coverage                 |
+| `make typecheck` | Run `mypy`                              |
+| `make format`    | Format with `black` and `isort`         |
+| `make lint`      | Lint with `flake8`                      |
+| `make clean`     | Clean generated files                   |
 
 ---
 
