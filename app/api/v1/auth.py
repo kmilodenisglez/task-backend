@@ -3,13 +3,13 @@ from fastapi import APIRouter, Depends, Form, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db, DBSession
+from app.database import get_db
 from app.models import User
 from app.schemas import Token, UserResponse
 from app.utils import hash_password, verify_password
 from app.utils.auth import create_access_token, get_current_user
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter()
 
 
 class TokenResponse(Token):
@@ -21,7 +21,7 @@ async def register(
         email: str = Form(...),
         password: str = Form(...),
         name: str = Form(None),
-        db: DBSession = Depends(get_db),
+        db: AsyncSession = Depends(get_db),
 ):
     from app.utils.validators import validate_password
     validate_password(password)
@@ -49,7 +49,7 @@ async def register(
 async def login(
         email: str = Form(...),
         password: str = Form(...),
-        db: DBSession = Depends(get_db),
+        db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
@@ -58,12 +58,12 @@ async def login(
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access_token = create_access_token(data={"sub": str(user.id)})
-
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "user": {"id": user.id, "email": user.email, "name": user.name},
     }
+
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(
