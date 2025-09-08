@@ -3,6 +3,11 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 
+class LoginForm(BaseModel):
+    email: str
+    password: str
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -33,7 +38,7 @@ class UserSession(BaseModel):
 
 class CurrentUser(BaseModel):
     id: int
-    email:  Optional[str] = None
+    email: Optional[str] = None
 
 
 class AuthStatus(BaseModel):
