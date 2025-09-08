@@ -1,3 +1,4 @@
+# app/api/v1/auth.py
 from fastapi import APIRouter, Depends, Form, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +14,7 @@ router = APIRouter()
 
 @router.post("/register", response_model=TokenResponse)
 async def register(
-        email: str = Form(...),
+        email: str = Form(...), 
         password: str = Form(...),
         name: str = Form(None),
         db: AsyncSession = Depends(get_db),
@@ -42,11 +43,11 @@ async def register(
 
 @router.post("/login", response_model=TokenResponse)
 async def login(
-        email: str = Form(...),
+        username: str = Form(...),
         password: str = Form(...),
         db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
-    result = await db.execute(select(User).where(User.email == email))
+    result = await db.execute(select(User).where(User.email == username))
     user = result.scalar_one_or_none()
 
     if not user or not user.hashed_password or not verify_password(password, user.hashed_password):
