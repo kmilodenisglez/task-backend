@@ -1,16 +1,19 @@
 # conftest.py
+import uuid
+
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
 from app.config import settings
+from app.utils import hash_password
 
 settings.testing = True
 
 # Now import after settings are applied
 from app.database import DATABASE_URL, get_db
 from app.main import app
-from app.models import Base
+from app.models import Base, User
 
 # Engine de test
 test_engine = create_async_engine(
@@ -47,3 +50,16 @@ async def override_get_db(db_session):
     app.dependency_overrides[get_db] = lambda: db_session
     yield
     app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_user(db_session):
+    unique_email = f"testuser_{uuid.uuid4()}@example.com"
+    user = User(email=unique_email, hashed_password=hash_password("T3stp@ssw0rd.23"))
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    yield user
+
+    await db_session.delete(user)
+    await db_session.commit()
