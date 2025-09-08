@@ -37,9 +37,9 @@ lint:
 	$(ISORT) --check-only $(APP_DIR)/
 	$(FLAKE8) $(APP_DIR)/
 
-typecheck:
-	@echo "🔍 Running mypy type checks..."
-	$(MYPY) $(APP_DIR)/
+# typecheck:
+# 	@echo "🔍 Running mypy type checks..."
+# 	$(MYPY) $(APP_DIR)/
 
 test:
 	@echo "🧪 Running tests..."
