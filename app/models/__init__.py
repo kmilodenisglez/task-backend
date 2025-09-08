@@ -4,8 +4,8 @@ Models package - SQLAlchemy database models
 """
 # Import Base first
 from .base import Base
-from .user import User
 from .task import Task
+from .user import User
 
 # Import models in the correct order to avoid relationship problems
 

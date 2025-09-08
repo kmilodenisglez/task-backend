@@ -1,4 +1,5 @@
 import re
+
 from fastapi import HTTPException
 
 # Patrones de validación

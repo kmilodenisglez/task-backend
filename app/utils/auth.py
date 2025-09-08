@@ -1,6 +1,6 @@
 # app/utils/auth.py
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Any
+from typing import Any, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2, OAuth2PasswordBearer
@@ -42,7 +42,8 @@ def decode_access_token(token: str) -> Optional[dict[str, Any]]:
 
 
 # Custom OAuth2 for Swagger (Password Flow)
-from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel, OAuthFlowPassword
+from fastapi.openapi.models import OAuthFlowPassword
+from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 
 
 class OAuth2PasswordBearerWithBearer(OAuth2):

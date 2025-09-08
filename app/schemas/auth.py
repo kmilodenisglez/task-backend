@@ -1,6 +1,7 @@
 # app/schemas/auth.py
-from pydantic import BaseModel, ConfigDict
 from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
 
 
 class LoginForm(BaseModel):

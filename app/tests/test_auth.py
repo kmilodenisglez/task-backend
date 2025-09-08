@@ -1,11 +1,10 @@
 # app/tests/test_auth.py
 
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 from app.utils.auth import create_access_token
-
 
 # @pytest.fixture(autouse=True)
 # async def clean_db(db_session):

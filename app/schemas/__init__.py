@@ -1,6 +1,6 @@
 # app/schemas/__init__.py
-from .task import TaskBase, TaskCreate, TaskUpdate, TaskResponse
-from .auth import Token, UserBase, UserCreate, UserResponse, AuthStatus, UserSession
+from .auth import AuthStatus, Token, UserBase, UserCreate, UserResponse, UserSession
+from .task import TaskBase, TaskCreate, TaskResponse, TaskUpdate
 
 __all__ = [
     # Tasks
