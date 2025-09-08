@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import models, schemas
 from app.database import get_db
 
-router = APIRouter(prefix="/api/v1/tasks", tags=["tasks"])
+router = APIRouter()
 
 # Detect testing mode
 from app.config import settings
