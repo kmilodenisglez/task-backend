@@ -2,11 +2,27 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import api_router
+from app.api import api_router
+from app.api.health import router as health_router
+from app.utils.logging import LoggingMiddleware, setup_logging
+from app.utils.rate_limiting import RateLimitMiddleware
 
-app = FastAPI(title="Task API", version="1.0")
+# Setup logging first
+setup_logging()
 
-# CORS Middleware (Development + Production domains)
+app = FastAPI(
+    title="Task API",
+    version="1.0",
+    description="A modern task management API with advanced features",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+# Add middleware
+app.add_middleware(LoggingMiddleware)
+app.add_middleware(RateLimitMiddleware, calls=100, period=3600)
+
+# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -18,9 +34,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api_router, prefix="/api/v1")
+# Include routers
+app.include_router(api_router, prefix="/api")
+app.include_router(health_router, prefix="/health", tags=["health"])
 
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to Task API"}
+    return {
+        "message": "Welcome to Task API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health/health",
+    }

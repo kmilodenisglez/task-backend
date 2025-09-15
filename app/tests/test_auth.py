@@ -20,7 +20,12 @@ async def test_root():
     ) as client:
         response = await client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"message": "Welcome to Task API"}
+    assert response.json() == {
+        "message": "Welcome to Task API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health/health",
+    }
 
 
 @pytest.mark.asyncio
