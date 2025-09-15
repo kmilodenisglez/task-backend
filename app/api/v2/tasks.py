@@ -3,16 +3,16 @@ Enhanced tasks API v2 with additional features
 """
 
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app import models, schemas
+from app import models
 from app.database import get_db
 from app.schemas.auth import CurrentUser
-from app.schemas.task import PaginatedTaskResponse, TaskResponse
+from app.schemas.task import PaginatedTaskResponse
 from app.utils.auth import get_current_user
 from app.utils.logging import get_logger
 
@@ -108,7 +108,7 @@ async def get_task_stats(
     # Completed tasks
     completed_result = await db.execute(
         select(func.count(models.Task.id)).where(
-            and_(models.Task.user_id == current_user.id, models.Task.completed == True)
+            and_(models.Task.user_id == current_user.id, models.Task.completed)
         )
     )
     completed_tasks = completed_result.scalar_one()

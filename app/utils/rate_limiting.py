@@ -5,10 +5,12 @@ Rate limiting utilities using in-memory storage
 import asyncio
 import time
 from collections import defaultdict, deque
-from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Dict
 
 from fastapi import HTTPException, Request
+
+# Rate limiting middleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.utils.logging import get_logger
 
@@ -129,10 +131,6 @@ async def check_rate_limit(
                 "Retry-After": str(rate_info["retry_after"]),
             },
         )
-
-
-# Rate limiting middleware
-from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):

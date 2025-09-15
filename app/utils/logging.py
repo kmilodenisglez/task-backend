@@ -1,11 +1,14 @@
 import json
 import logging
 import sys
+
+# Request logging middleware
+import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict
 
-from app.config import settings
+from fastapi import Request
+from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class JSONFormatter(logging.Formatter):
@@ -89,13 +92,6 @@ def setup_logging() -> None:
 def get_logger(name: str) -> logging.Logger:
     """Get a logger instance"""
     return logging.getLogger(f"app.{name}")
-
-
-# Request logging middleware
-import time
-
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):

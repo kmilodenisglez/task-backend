@@ -4,10 +4,9 @@ Health check and monitoring endpoints
 
 import os
 from datetime import datetime, timezone
-from typing import Any, Dict
 
 import psutil
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -120,16 +119,16 @@ async def get_metrics():
 
     metrics.extend(
         [
-            f"# HELP system_cpu_percent CPU usage percentage",
-            f"# TYPE system_cpu_percent gauge",
+            "# HELP system_cpu_percent CPU usage percentage",
+            "# TYPE system_cpu_percent gauge",
             f"system_cpu_percent {cpu_percent}",
             "",
-            f"# HELP system_memory_percent Memory usage percentage",
-            f"# TYPE system_memory_percent gauge",
+            "# HELP system_memory_percent Memory usage percentage",
+            "# TYPE system_memory_percent gauge",
             f"system_memory_percent {memory.percent}",
             "",
-            f"# HELP system_disk_percent Disk usage percentage",
-            f"# TYPE system_disk_percent gauge",
+            "# HELP system_disk_percent Disk usage percentage",
+            "# TYPE system_disk_percent gauge",
             f"system_disk_percent {disk.percent}",
             "",
         ]
