@@ -9,9 +9,8 @@
 ![Docker](https://img.shields.io/badge/Docker-Container-blue)
 ![Coverage](https://img.shields.io/badge/Coverage-0.0%25-green)
 
-
 A modern RESTful API for task management built with **FastAPI**, **SQLAlchemy 2.x (async)**, and **PostgreSQL**.
-Designed for scalability, testability, and developer experience.
+Designed for scalability, testability, and developer experience with advanced monitoring and observability features.
 
 ---
 
@@ -33,6 +32,7 @@ make docker-dev
 # 4. Open in browser
 # API:   http://localhost:8000
 # Docs:  http://localhost:8000/docs
+# Health: http://localhost:8000/health/health
 ```
 
 🛠️ For **production build**:
@@ -65,18 +65,29 @@ make -f Makefile.ci coverage
 
 ---
 
+## �� Features
 
-## 🚀 Features
-
+### Core Features
 * **FastAPI backend** with **Pydantic v2** and async/await support
 * **Asynchronous database** access with `asyncpg` and SQLAlchemy (async mode)
 * **PostgreSQL** containerized using **Docker** / **Podman**
 * **Database migrations** powered by **Alembic**
 * **Isolated testing** with `pytest`, `pytest-asyncio`, `httpx`, and SQLite (async mode)
 * **Configurable environments** via `.env` files and `pydantic-settings`
+
+### Advanced Features
+* **API Versioning** - v1 and v2 with backward compatibility
+* **Structured Logging** - JSON logging with request tracking and correlation IDs
+* **Health Checks** - Basic and detailed health monitoring with system metrics
+* **Rate Limiting** - Configurable rate limiting with sliding window algorithm
+* **Monitoring** - System metrics, performance monitoring, and observability
+* **Security** - JWT authentication, password validation, and user isolation
+
+### Developer Experience
 * **Code quality tools**: `mypy`, `black`, `isort`, `flake8`, `pytest-cov`
 * **Developer workflow** streamlined with **Makefile** and `pyproject.toml`
 * **Continuous Integration (CI)** via **GitHub Actions** for automated linting, testing, type checking, and coverage reports
+* **Docker support** with development and production configurations
 
 ---
 
@@ -161,7 +172,7 @@ EOF
 
 This project provides **two Dockerfiles**:
 
-* `Dockerfile` → optimized for **production**
+* `Dockerfile` → optimized for **production** with monitoring and logging
 * `Dockerfile.dev` → for **development** (hot reload, dev dependencies)
 
 ### Development (hot reload)
@@ -224,6 +235,7 @@ Server available at:
 
 * API → [http://localhost:8000](http://localhost:8000)
 * Docs → [http://localhost:8000/docs](http://localhost:8000/docs)
+* Health → [http://localhost:8000/health/health](http://localhost:8000/health/health)
 
 ---
 
@@ -269,6 +281,17 @@ Server available at:
 | `make upgrade`     | Apply Alembic migrations                 |
 | `make downgrade`   | Rollback last migration                  |
 
+### Monitoring Commands
+
+| Command            | Description                              |
+| ------------------ | ---------------------------------------- |
+| `make health`      | Basic health check                       |
+| `make health-detailed` | Detailed health check with metrics    |
+| `make metrics`     | View application metrics                 |
+| `make logs-tail`   | Follow application logs                  |
+| `make logs-errors` | View error logs only                     |
+| `make test-rate-limit` | Test rate limiting functionality    |
+
 ---
 
 ## 📂 Project Structure
@@ -280,11 +303,24 @@ task-backend/
 │   ├── config.py
 │   ├── database.py
 │   ├── api/
+│   │   ├── v1/           # API version 1
+│   │   │   ├── auth.py
+│   │   │   └── tasks.py
+│   │   ├── v2/           # API version 2 (enhanced)
+│   │   │   ├── auth.py
+│   │   │   └── tasks.py
+│   │   └── health.py     # Health check endpoints
 │   ├── models/
 │   ├── schemas/
+│   ├── utils/
+│   │   ├── auth.py
+│   │   ├── logging.py    # Structured logging
+│   │   ├── rate_limiting.py
+│   │   └── validators.py
 │   └── tests/
 ├── alembic/
 │   └── versions/
+├── logs/                 # Application logs
 ├── .env.example
 ├── Dockerfile
 ├── Dockerfile.dev
@@ -306,6 +342,8 @@ task-backend/
   * ✅ PostgreSQL async (realistic, slower)
 * Controlled via `settings.testing` flag
 
+See [TESTING.md](TESTING.md) for detailed testing documentation.
+
 ---
 
 ## 📈 CI/CD (GitHub Actions)
@@ -313,6 +351,37 @@ task-backend/
 * Linting, type checking, tests, coverage
 * Coverage reports uploaded as artifacts (`coverage-html`, `coverage-xml`)
 * Workflow: `.github/workflows/ci.yml`
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | Required |
+| `SECRET_KEY` | JWT secret key | Required |
+| `LOG_LEVEL` | Logging level | `INFO` |
+| `RATE_LIMIT_CALLS` | Rate limit requests per window | `100` |
+| `RATE_LIMIT_PERIOD` | Rate limit window in seconds | `3600` |
+| `ENABLE_METRICS` | Enable metrics endpoint | `true` |
+
+### Logging Configuration
+
+The application uses structured JSON logging with:
+- Request/response logging with correlation IDs
+- Error tracking and monitoring
+- Performance metrics
+- User activity tracking
+
+### Rate Limiting
+
+Configurable rate limiting with:
+- Sliding window algorithm
+- Per-IP limiting
+- Configurable limits and windows
+- Informative response headers
 
 ---
 

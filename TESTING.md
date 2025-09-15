@@ -2,7 +2,7 @@
 
 > **Note:** The entire application — including tests — now runs **asynchronously** using `AsyncSession` and `AsyncClient`.
 
-This document explains the current testing architecture and best practices for the project.
+This document explains the current testing architecture and best practices for the project, including new testing features for monitoring, logging, and API versioning.
 
 ---
 
@@ -32,6 +32,7 @@ We avoid legacy patterns like `.query()` or sync-style commits by using **pure a
 | 🧼 Clean Sessions | Each test uses a fresh `AsyncSession` with rollback |
 | 🔒 Secure by Default | Users only access their own data (tested) |
 | 📈 Realistic Performance | No hidden sync bottlenecks |
+| 🔍 Enhanced Monitoring | Tests include logging, health checks, and metrics |
 
 ---
 
@@ -52,6 +53,9 @@ settings.testing = True  # ← Must be set before importing database
 class Settings(BaseSettings):
     testing: bool = False
     database_url: str = "postgresql+psycopg2://user:pass@localhost/taskdb"
+    log_level: str = "INFO"
+    rate_limit_calls: int = 100
+    rate_limit_period: int = 3600
 
     @property
     def database_url_for_async(self) -> str:
