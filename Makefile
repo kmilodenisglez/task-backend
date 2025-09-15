@@ -141,3 +141,35 @@ downgrade:
 
 db-status:
 	alembic current
+
+# --- Monitoring ---
+logs-tail:
+	@echo "📜 Following application logs..."
+	tail -f logs/app.log
+
+logs-errors:
+	@echo "🚨 Showing error logs..."
+	tail -f logs/errors.log
+
+# --- Health Checks ---
+health:
+	@echo "🏥 Checking application health..."
+	curl -s http://localhost:8000/health/health | jq .
+
+health-detailed:
+	@echo "🏥 Detailed health check..."
+	curl -s http://localhost:8000/health/detailed | jq .
+
+# --- Metrics ---
+metrics:
+	@echo "📊 Application metrics..."
+	curl -s http://localhost:8000/health/metrics
+
+# --- Rate Limiting Test ---
+test-rate-limit:
+	@echo "🚦 Testing rate limiting..."
+	for i in {1..5}; do \
+		echo "Request $$i:"; \
+		curl -s -w "Status: %{http_code}\n" http://localhost:8000/api/v1/tasks/; \
+		echo ""; \
+	done
