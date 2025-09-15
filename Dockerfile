@@ -1,37 +1,51 @@
-# Dockerfile
+# Dockerfile - Production optimized
 FROM python:3.13.2-slim AS base
 
-# Evita que Python genere .pyc y buffers
+# Environment variables for Python optimization
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PATH="/home/appuser/.local/bin:$PATH"
+    PATH="/home/appuser/.local/bin:$PATH" \
+    PYTHONPATH="/app"
 
-# Instala dependencias del sistema necesarias para psycopg2 y asyncpg
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     gcc \
-    && rm -rf /var/lib/apt/lists/*
+    procps \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Usuario no root
-RUN useradd -ms /bin/bash appuser
+# Create application user and directories
+RUN useradd -ms /bin/bash appuser \
+    && mkdir -p /app/logs \
+    && chown -R appuser:appuser /app
+
 WORKDIR /app
 USER appuser
 
-# Copia solo los archivos necesarios para instalar dependencias
+# Copy dependency files first for better caching
 COPY --chown=appuser:appuser pyproject.toml README.md ./
 
-# Instala dependencias (prod por defecto)
+# Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel \
     && pip install -e .
 
-# Copia el resto del código
+# Copy application code
 COPY --chown=appuser:appuser . .
 
-# Puerto expuesto
+# Create necessary directories
+RUN mkdir -p logs output/postgres_data output/postgres_run
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health/health || exit 1
+
+# Expose port
 EXPOSE 8000
 
-# Comando por defecto
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Default command
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
